@@ -8,6 +8,10 @@ const grantAccessContainer = document.querySelector(
 const searchForm = document.querySelector("[data-searchForm]");
 const loadingScreen = document.querySelector(".loading-container");
 const userInfoContainer = document.querySelector(".user-info-container");
+const notFound = document.querySelector(".errorContainer");
+const errorBtn = document.querySelector("[data-errorButton]");
+const errorText = document.querySelector("[data-errorText]");
+const errorImage = document.querySelector("[data-errorImg]");
 
 let currentTab = userTab;
 const API_key = "e31bca6f5fa5b27c0fef5581b644898f";
@@ -16,6 +20,7 @@ currentTab.classList.add("current-tab");
 getfromSessionStorage();
 
 function switchTab(clickedTab) {
+  notFound.classList.remove("active");
   if (clickedTab != currentTab) {
     currentTab.classList.remove("current-tab");
     currentTab = clickedTab;
@@ -65,12 +70,21 @@ async function fetchUserWeatherInfo(coordinates) {
     );
 
     const data = await response.json();
+
+    if (!data.sys) {
+      throw data;
+    }
     loadingScreen.classList.remove("active");
     userInfoContainer.classList.add("active");
 
     renderWeatherInfo(data);
   } catch (error) {
     loadingScreen.classList.remove("active");
+    notFound.classList.add("active");
+    errorImage.style.display = "none";
+    errorText.innerText = `Error: ${err?.message}`;
+    errorBtn.style.display = "block";
+    errorBtn.addEventListener("click", fetchUserWeatherInfo);
   }
 }
 
@@ -133,6 +147,7 @@ async function fetchSearchWeatherInfo(city) {
   loadingScreen.classList.add("active");
   userInfoContainer.classList.remove("active");
   grantAccessContainer.classList.remove("active");
+  notFound.classList.remove("active");
 
   try {
     const response = await fetch(
@@ -141,8 +156,18 @@ async function fetchSearchWeatherInfo(city) {
 
     const data = await response.json();
 
+    if (!data.sys) {
+      throw data;
+    }
+
     loadingScreen.classList.remove("active");
     userInfoContainer.classList.add("active");
     renderWeatherInfo(data);
-  } catch (err) {}
+  } catch (err) {
+    loadingScreen.classList.remove("active");
+    userInfoContainer.classList.remove("active");
+    notFound.classList.add("active");
+    errorText.innerText = `${err?.message}`;
+    errorBtn.style.display = "none";
+  }
 }
